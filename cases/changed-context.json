@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "id": "changed-context",
+  "title": "The same action occurred in a different context",
+  "provenance": "synthetic",
+  "initial": {
+    "decision_id": "query-1",
+    "context": {
+      "workflow": "billing-export",
+      "environment": "demo",
+      "task_family": "month-close",
+      "condition": "must-read-current-data"
+    },
+    "action": "read-replica",
+    "outcome": {
+      "status": "failure",
+      "evidence": "Authored fixture: close report required current data."
+    }
+  },
+  "correction": {
+    "after_decision_id": "query-1",
+    "content": "For month-close exports, use the primary source.",
+    "intended_action": "read-primary",
+    "visible_to_later": true
+  },
+  "later": {
+    "decision_id": "query-2",
+    "context": {
+      "workflow": "billing-export",
+      "environment": "demo",
+      "task_family": "historical-analysis",
+      "condition": "frozen-snapshot-required"
+    },
+    "action": "read-replica",
+    "outcome": {
+      "status": "success",
+      "evidence": "Authored fixture: this historical analysis explicitly required the frozen snapshot."
+    }
+  },
+  "guard": {
+    "allowed_actions": [
+      "read-replica"
+    ],
+    "basis": "Authored teaching precondition for the later task: historical analysis uses a frozen snapshot."
+  }
+}

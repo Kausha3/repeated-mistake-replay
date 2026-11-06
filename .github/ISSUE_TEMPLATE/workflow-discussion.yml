@@ -1,0 +1,42 @@
+name: Discuss a recurring agent mistake
+description: Share a brief non-sensitive workflow description with the Hebbrix founders.
+title: "Workflow discussion: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue is public. Do not include logs, customer information, credentials or private company details.
+        Describe the workflow at a high level. We can agree on a private route before inspecting any trace.
+        This is an initial discussion, not an evaluation agreement or appointment.
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What kind of workflow is this?
+      description: A brief description without private data.
+    validations:
+      required: true
+  - type: textarea
+    id: recurrence
+    attributes:
+      label: What repeats after a correction?
+      description: Describe the repeated behavior and the correction at a high level.
+    validations:
+      required: true
+  - type: dropdown
+    id: ownership
+    attributes:
+      label: What is your relationship to the workflow?
+      options:
+        - I own or maintain it
+        - I work with its owner
+        - I am investigating an example
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: How do you know what happened afterward?
+      description: Describe the kind of result you can observe. Do not paste the trace.
+    validations:
+      required: true
+

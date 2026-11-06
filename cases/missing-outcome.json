@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "missing-outcome",
+  "title": "A later action has no observed result yet",
+  "provenance": "synthetic",
+  "initial": {
+    "decision_id": "job-1",
+    "context": {
+      "workflow": "build-repair",
+      "environment": "demo",
+      "task_family": "test-command",
+      "condition": "runner-requires-project-argument"
+    },
+    "action": "test --all",
+    "outcome": {
+      "status": "failure",
+      "evidence": "Authored fixture: tool rejected missing project argument."
+    }
+  },
+  "correction": {
+    "after_decision_id": "job-1",
+    "content": "Supply the project argument.",
+    "intended_action": "test --project demo-app",
+    "visible_to_later": null
+  },
+  "later": {
+    "decision_id": "job-2",
+    "context": {
+      "workflow": "build-repair",
+      "environment": "demo",
+      "task_family": "test-command",
+      "condition": "runner-requires-project-argument"
+    },
+    "action": "test --all",
+    "outcome": {
+      "status": "unknown",
+      "evidence": "No result is recorded in this authored fixture."
+    }
+  }
+}
