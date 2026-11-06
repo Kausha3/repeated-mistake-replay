@@ -89,10 +89,11 @@ if(typeof module!=='undefined')module.exports={parseCase,validate,analyze};
 if(typeof document==='undefined')return;
 const editor=document.getElementById('input'),error=document.getElementById('error'),result=document.getElementById('result');
 const analyzeButton=document.getElementById('analyze'),fileInput=document.getElementById('file');
+const download=document.getElementById('download'),examples=document.getElementById('examples');
 let report=null,generation=0,loading=false;
 function stopLoading(){loading=false;analyzeButton.disabled=false;}
-function clearResult(){report=null;result.replaceChildren();error.textContent='';document.getElementById('download').disabled=true;}
-function clear(){generation++;stopLoading();editor.value='';fileInput.value='';document.getElementById('examples').selectedIndex=0;clearResult();}
+function clearResult(){report=null;result.replaceChildren();error.textContent='';download.disabled=true;}
+function clear(){generation++;stopLoading();editor.value='';fileInput.value='';examples.selectedIndex=0;clearResult();}
 const declaration=x=>x===null?'unknown':(x?'yes':'no');
 function show(){if(loading){error.textContent='Wait for the selected file to finish loading.';return;}clearResult();try{
   report=analyze(parseCase(editor.value),window.REPLAY_DATA.rules);
@@ -114,12 +115,11 @@ function show(){if(loading){error.textContent='Wait for the selected file to fin
   if(report.declared_allowlist_check.available){append('p','Declared allowlist accepts the later action: '+report.declared_allowlist_check.later_action_allowed+'. Accepts the correction action: '+report.declared_allowlist_check.correction_action_allowed+'.');append('p',report.declared_allowlist_check.basis);}
   append('p',report.evidence_limit);append('p',report.claim_boundary);
   const detail=append('details','');append('summary','Inspect the complete report',detail);append('pre',JSON.stringify(report,null,2),detail);
-  document.getElementById('download').disabled=false;
+  download.disabled=false;
 }catch(e){report=null;error.textContent='Cannot inspect record: '+e.message;}}
 analyzeButton.addEventListener('click',show);
-editor.addEventListener('input',()=>{generation++;stopLoading();fileInput.value='';document.getElementById('examples').selectedIndex=0;clearResult();});
+editor.addEventListener('input',()=>{generation++;stopLoading();fileInput.value='';examples.selectedIndex=0;clearResult();});
 document.getElementById('clear').addEventListener('click',clear);
-const examples=document.getElementById('examples');
 window.REPLAY_DATA.cases.forEach((c,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=c.title;examples.append(o);});
 examples.addEventListener('change',()=>{generation++;stopLoading();fileInput.value='';clearResult();if(examples.value==='')return;editor.value=JSON.stringify(window.REPLAY_DATA.cases[Number(examples.value)],null,2);show();});
 fileInput.addEventListener('change',async event=>{
@@ -130,12 +130,12 @@ fileInput.addEventListener('change',async event=>{
   try{
     const bytes=await file.arrayBuffer();if(ticket!==generation)return;
     const raw=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);
-    if(ticket!==generation)return;editor.value=raw;stopLoading();show();
+    editor.value=raw;stopLoading();show();
   }catch(e){
     if(ticket===generation){editor.value='';fileInput.value='';error.textContent='Cannot read UTF-8 file: '+e.message;}
   }finally{if(ticket===generation)stopLoading();}
 });
-document.getElementById('download').addEventListener('click',()=>{
+download.addEventListener('click',()=>{
   if(!report)return;let url=null;error.textContent='';
   try{
     const blob=new Blob([JSON.stringify(report,null,2)+'\n'],{type:'application/json'});

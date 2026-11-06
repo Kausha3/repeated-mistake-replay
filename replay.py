@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Inspect an explicit attempt history locally. No model, network, or Hebbrix API calls."""
-from __future__ import annotations
 import argparse
 import hashlib
 import html
@@ -28,7 +27,6 @@ def text_value(value, location):
         raise CaseError(f"{location} contains invalid Unicode") from error
     if any(ord(c) < 32 and c not in "\n\r\t" for c in value):
         raise CaseError(f"{location} contains a control character")
-    return value
 
 def object_fields(value, required, optional, location):
     if not isinstance(value, dict):

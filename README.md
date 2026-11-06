@@ -36,6 +36,8 @@ python3 replay.py --case ignored-correction
 python3 replay.py --input path/to/your-case.json --output path/to/private-report
 ```
 
+The CLI generates all three reports when run. Generated `output/` files are ignored by Git.
+
 Open `output/report.html`, or read `report.json` and `report.md`. Custom output directories receive the same three filenames. Existing report files are replaced. Input paths must be regular files; named pipes and devices are rejected. The tool refuses to overwrite any selected input file, including a selected bundled case, or write through report-file symlinks. On POSIX systems, new report files allow only owner read/write; existing stricter owner permissions and rollback file modes are preserved. This does not audit filesystem ACLs or network mounts. Reports contain the complete supplied record. Keep private reports private. Browser file selection clears the previous editor and report before reading. Inspect stays disabled during the current load; a failed read cannot silently reuse the previous record. Errors thrown while preparing or starting a download appear in the page.
 
 Trace text is escaped in HTML and fenced as inert JSON in Markdown. The browser displays trace content using text nodes. Trace strings are never executed. No agent, shell command or external tool is invoked from a record.

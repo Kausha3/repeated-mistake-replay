@@ -91,7 +91,7 @@ function runtime(faults = {}) {
     throw new Error('Unexpected network call in local inspection');
   };
   const context = vm.createContext({
-    document, window: {}, module: { exports: {} }, Blob, TextEncoder, TextDecoder,
+    document, window: {}, Blob, TextEncoder, TextDecoder,
     URL: {
       createObjectURL(blob) {
         if (faults.url) throw new Error('Injected object URL failure');
