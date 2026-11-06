@@ -42,5 +42,9 @@
       "read-primary"
     ],
     "basis": "Authored teaching precondition: this export requires the primary source for current data."
+  },
+  "comparison": {
+    "comparable": true,
+    "basis": "Authored synthetic comparison: these toy attempts declare the same task conditions. This is not independent evidence."
   }
 }

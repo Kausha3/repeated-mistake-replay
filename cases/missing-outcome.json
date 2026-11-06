@@ -36,5 +36,9 @@
       "status": "unknown",
       "evidence": "No result is recorded in this authored fixture."
     }
+  },
+  "comparison": {
+    "comparable": true,
+    "basis": "Authored synthetic comparison: these toy attempts declare the same task conditions. This is not independent evidence."
   }
 }

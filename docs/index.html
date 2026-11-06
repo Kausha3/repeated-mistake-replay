@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'sha256-k9QT7J9LLMv4G2dqzgd++tMXbCZ4f4qed1f0e5ZPT2o='; base-uri 'none'; form-action 'none'"><title>Repeated mistake replay</title><style>
+<meta http-equiv="Content-Security-Policy" content="default-src &#x27;none&#x27;; script-src &#x27;sha256-WG5fUNzqt9JTaexGnxpKZsg/Afb/KCVLEbPp3hsEfw0=&#x27;; style-src &#x27;sha256-yShdtUM32kBR/lRBojcOAyk2CdDp9A9J0FCPsAgguZM=&#x27;; connect-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;">
+<meta name="description" content="Inspect a redacted agent decision record in your browser. Check reported results, correction visibility and comparison gaps. A free tool from Hebbrix.">
+<title>Agent correction record inspector | Hebbrix</title><style>
 :root{color-scheme:light;--ink:#182b29;--muted:#50615e;--line:#dce5dc;--paper:#f4f5ed;--green:#dcebd0}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.6 system-ui,sans-serif}
 main{max-width:1040px;margin:auto;padding:50px 28px 75px}.brand{font-size:14px;letter-spacing:.12em;text-transform:uppercase}
@@ -14,232 +16,150 @@ h3{font-size:17px;margin:0 0 8px}.control p{font-size:15px;margin:8px 0}code{bac
 table{width:100%;border-collapse:collapse;font-size:15px;margin:20px 0}th,td{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid var(--line)}th{width:22%}
 details{margin-top:20px}summary{cursor:pointer;font-weight:650}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f6f2;padding:18px;font:13px/1.5 ui-monospace,monospace}
 footer{margin-top:35px;font-size:14px;color:var(--muted)}@media(max-width:700px){.grid{grid-template-columns:1fr}main{padding:30px 18px}article{padding:18px}th{width:28%}}
+
+main{padding-top:28px}h1{font-size:clamp(32px,5vw,52px);margin:18px 0;max-width:900px}
+td{overflow-wrap:anywhere}textarea{width:100%;min-height:280px;font:13px/1.5 ui-monospace,monospace;padding:16px;border:1px solid #7b8c7b;border-radius:8px;background:#fff;color:#182b29}label{display:block;font-weight:650;margin:15px 0 6px}select,input,button{font:inherit;max-width:100%}select{width:100%;padding:10px}button{padding:10px 18px;border:1px solid #476b3e;border-radius:6px;background:#e4edda;color:#182b29;cursor:pointer;margin:12px 5px 0 0}button.primary{background:#23453a;color:white}button:disabled{opacity:.5;cursor:default}#error{color:#8d2117;overflow-wrap:anywhere}#result:empty{display:none}#result{background:#fff;border:1px solid #a4b8a1;border-radius:10px;padding:24px;margin-top:22px}a:focus-visible,button:focus-visible,textarea:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #42896e;outline-offset:3px}
 </style></head>
-<body><main><div class="brand">Hebbrix / an inspectable teaching example</div>
-<h1>What happened after the correction?</h1>
-<p>Follow an attempted action, its result, a correction, and the next attempt. Separate missing evidence from an instruction that was supplied and still went unused.</p>
-<div class="note"><strong>Synthetic trace replay.</strong> The bundled cases were authored for teaching.
-This page is not a live agent run or a Hebbrix performance result. Controls inspect explicit fixture data; they do not demonstrate that a model follows advice.</div>
-<p><a href="https://github.com/Kausha3/repeated-mistake-replay">Download the local tool and read the guide</a> | <a href="https://github.com/Kausha3/repeated-mistake-replay/issues/new?template=workflow-discussion.yml">Discuss a workflow</a></p><nav aria-label="Cases"><a href="#case-0">1. missing-history</a><a href="#case-1">2. ignored-correction</a><a href="#case-2">3. changed-context</a><a href="#case-3">4. missing-outcome</a></nav>
-<article id="case-0"><span class="tag">synthetic case / correction_unavailable</span>
-<h2>A correction was not available on the later attempt</h2><p>The same failed action repeated while the correction was declared unavailable.</p>
-<table><thead><tr><th>Recorded trace</th><th>Initial attempt</th><th>Later attempt</th></tr></thead><tbody><tr><th>Decision</th><td>export-1</td><td>export-2</td></tr><tr><th>Action</th><td>read-replica</td><td>read-replica</td></tr><tr><th>Outcome</th><td>failure</td><td>failure</td></tr><tr><th>Evidence</th><td>Authored fixture: export used a snapshot older than the requested reporting period.</td><td>Authored fixture: the later export used the same old snapshot.</td></tr></tbody></table>
-<p><strong>Correction:</strong> For this month-close export, use the primary data source.</p>
-<p><strong>Next check:</strong> Inspect how the correction is scoped, retrieved, and included in the later decision.</p>
-<div class="grid"><div class="control"><h3>Written correction control</h3>
-<p>Intended action: <code>read-primary</code></p>
-<p>The intended action is read from the authored correction. No model was tested for following it, and no counterfactual outcome was measured.</p></div>
-<div class="control"><h3>Deterministic check control</h3><p>The declared guard rejects the observed later action.</p><p>Authored teaching precondition: this export requires the primary source for current data.</p><p>This checks a declared allowlist. It does not execute an agent, choose a repair, or prove task success.</p></div></div>
-<details><summary>Inspect the complete input</summary><pre>{
-  &quot;schema_version&quot;: 1,
-  &quot;id&quot;: &quot;missing-history&quot;,
-  &quot;title&quot;: &quot;A correction was not available on the later attempt&quot;,
-  &quot;provenance&quot;: &quot;synthetic&quot;,
-  &quot;initial&quot;: {
-    &quot;decision_id&quot;: &quot;export-1&quot;,
-    &quot;context&quot;: {
-      &quot;workflow&quot;: &quot;billing-export&quot;,
-      &quot;environment&quot;: &quot;demo&quot;,
-      &quot;task_family&quot;: &quot;month-close&quot;,
-      &quot;condition&quot;: &quot;must-read-current-data&quot;
-    },
-    &quot;action&quot;: &quot;read-replica&quot;,
-    &quot;outcome&quot;: {
-      &quot;status&quot;: &quot;failure&quot;,
-      &quot;evidence&quot;: &quot;Authored fixture: export used a snapshot older than the requested reporting period.&quot;
-    }
-  },
-  &quot;correction&quot;: {
-    &quot;after_decision_id&quot;: &quot;export-1&quot;,
-    &quot;content&quot;: &quot;For this month-close export, use the primary data source.&quot;,
-    &quot;intended_action&quot;: &quot;read-primary&quot;,
-    &quot;visible_to_later&quot;: false
-  },
-  &quot;later&quot;: {
-    &quot;decision_id&quot;: &quot;export-2&quot;,
-    &quot;context&quot;: {
-      &quot;workflow&quot;: &quot;billing-export&quot;,
-      &quot;environment&quot;: &quot;demo&quot;,
-      &quot;task_family&quot;: &quot;month-close&quot;,
-      &quot;condition&quot;: &quot;must-read-current-data&quot;
-    },
-    &quot;action&quot;: &quot;read-replica&quot;,
-    &quot;outcome&quot;: {
-      &quot;status&quot;: &quot;failure&quot;,
-      &quot;evidence&quot;: &quot;Authored fixture: the later export used the same old snapshot.&quot;
-    }
-  },
-  &quot;guard&quot;: {
-    &quot;allowed_actions&quot;: [
-      &quot;read-primary&quot;
-    ],
-    &quot;basis&quot;: &quot;Authored teaching precondition: this export requires the primary source for current data.&quot;
+<body><main><div class="brand">Hebbrix / free record inspector</div>
+<h1>Did the same agent mistake happen again?</h1>
+<p>Inspect a redacted record of two attempts and a correction. Get a checklist of missing results, changed context and declared correction visibility before deciding what to investigate.</p>
+<p><strong>Use your own JSON record below, or choose a synthetic example.</strong> This tool compares the fields you supply. It cannot determine whether an agent understood a correction or whether memory would fix the problem.</p>
+<div class="note"><strong>Your record stays in this browser tab.</strong> No record is sent to Hebbrix, no model runs, and the tool stores nothing in browser storage. Loading this hosted page contacts GitHub Pages. Downloaded reports contain your input. Use only authorized, redacted data.</div>
+<nav aria-label="Resources"><a href="https://github.com/Kausha3/repeated-mistake-replay#record-format">Record format and Python CLI</a><a href="#hebbrix">How Hebbrix fits</a></nav>
+<label for="examples">Load an explicitly synthetic example</label><select id="examples"><option value="">Choose an example, or supply your own record</option></select>
+<label for="file">Or open a local UTF-8 JSON file (100 KB limit)</label><input id="file" type="file" accept=".json,application/json">
+<label for="input">Record JSON</label><textarea id="input" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="format-help"></textarea>
+<p id="format-help" class="muted">Use named string fields for your task context. Actions are compared as exact strings, including case, spacing and parameters. Omit comparison when task equivalence is unknown. Raw vendor trace exports need mapping to the documented record format.</p>
+<button id="analyze" class="primary" type="button">Inspect record</button><button id="clear" type="button">Clear record</button><button id="download" type="button" disabled>Download report with input</button>
+<p id="error" role="alert"></p><section id="result" aria-live="polite" aria-label="Inspection result"></section>
+<noscript><p>This browser inspector needs JavaScript. Use the dependency-free Python CLI from the source repository, or enable JavaScript.</p></noscript>
+<article id="hebbrix"><h2>Where Hebbrix fits</h2>
+<p>An application records a decision and attaches the result when it becomes known. <a href="https://hebbrix.com">Hebbrix</a> uses those results to guide later decisions. We call this outcome-based learning. Developers connect through Python, TypeScript or MCP. Hebbrix is in private beta.</p>
+<p>This inspector is a separate, open-source evidence checklist. It does not call Hebbrix or measure product performance.</p>
+<p>If you maintain a workflow where a corrected mistake repeats, <a href="https://github.com/Kausha3/repeated-mistake-replay/issues/new?template=workflow-discussion.yml">describe it to the Hebbrix founders</a>. The GitHub issue is public and requires a GitHub account. Keep logs, customer data and credentials private. A discussion does not book an appointment or establish an evaluation agreement.</p><p>For a high-level inquiry without a public issue, use <a href="https://hebbrix.com/contact">Hebbrix's contact page</a>. Keep the trace private until a suitable route is agreed.</p></article>
+<footer>Examples are authored synthetic records. User-supplied records are declarations, not independently verified evidence. Read the <a href="https://github.com/Kausha3/repeated-mistake-replay">source, limitations and tests</a>. No analytics or third-party assets are included.</footer>
+</main><script>window.REPLAY_DATA = {"rules": [{"when": "context_changed", "code": "context_changed", "conclusion": "The supplied context fields differ. Their relevance needs review.", "next_check": "Decide whether these differences change the task or the correction's applicability. A text difference alone does not establish that."}, {"when": "not_comparable", "code": "declared_not_comparable", "conclusion": "The record declares these attempts unsuitable for comparison.", "next_check": "Review the supplied comparison basis before drawing a recurrence conclusion."}, {"when": "missing_outcome", "code": "insufficient_outcome_evidence", "conclusion": "The recorded outcomes do not establish a repeated failure.", "next_check": "Record the missing result and its source. Missing feedback is not failure."}, {"when": "initial_not_failure", "code": "initial_success", "conclusion": "The initial attempt is reported as successful, so this is not a repeat of an initial failure.", "next_check": "Review the later result separately and verify that both outcome labels are justified."}, {"when": "different_action", "code": "different_action", "conclusion": "The later attempt has different action text.", "next_check": "Investigate its result separately. Different text does not prove a semantically different action."}, {"when": "later_not_failure", "code": "repeat_without_repeat_failure", "conclusion": "The action repeated, but the recorded failure did not.", "next_check": "Check whether the first failure was transient before banning the action."}, {"when": "comparability_unknown", "code": "comparability_unknown", "conclusion": "The same action and two failures are reported. Comparable task conditions have not been established.", "next_check": "Add an explicit comparison basis. Matching context strings cannot establish equivalent task conditions."}, {"when": "same_intended_action", "code": "correction_preserves_action", "conclusion": "Two failures are reported, but the correction names the same action that was repeated.", "next_check": "Inspect parameters or other required changes. An action label alone cannot show whether the correction was followed."}, {"when": "correction_unavailable", "code": "correction_unavailable", "conclusion": "The record reports the same action failing twice and declares the correction unavailable.", "next_check": "Inspect how the correction is scoped, retrieved, and included in the later decision."}, {"when": "correction_available", "code": "correction_available", "conclusion": "The record reports the same action failing twice and declares the correction visible.", "next_check": "Check the actual supplied context, interpretation and execution. Visibility does not prove the correction was understood or applicable."}, {"when": "always", "code": "visibility_unknown", "conclusion": "The record reports two failures of the same action, but correction visibility is unknown.", "next_check": "Capture the evidence actually supplied to the later decision."}], "cases": [{"schema_version": 1, "id": "changed-context", "title": "The same action occurred in a different context", "provenance": "synthetic", "initial": {"decision_id": "query-1", "context": {"workflow": "billing-export", "environment": "demo", "task_family": "month-close", "condition": "must-read-current-data"}, "action": "read-replica", "outcome": {"status": "failure", "evidence": "Authored fixture: close report required current data."}}, "correction": {"after_decision_id": "query-1", "content": "For month-close exports, use the primary source.", "intended_action": "read-primary", "visible_to_later": true}, "later": {"decision_id": "query-2", "context": {"workflow": "billing-export", "environment": "demo", "task_family": "historical-analysis", "condition": "frozen-snapshot-required"}, "action": "read-replica", "outcome": {"status": "success", "evidence": "Authored fixture: this historical analysis explicitly required the frozen snapshot."}}, "guard": {"allowed_actions": ["read-replica"], "basis": "Authored teaching precondition for the later task: historical analysis uses a frozen snapshot."}, "comparison": {"comparable": false, "basis": "Authored synthetic comparison: task purpose and condition differ."}}, {"schema_version": 1, "id": "ignored-correction", "title": "The correction was supplied, but the same action repeated", "provenance": "synthetic", "initial": {"decision_id": "repair-1", "context": {"workflow": "build-repair", "environment": "demo", "task_family": "test-command", "condition": "runner-requires-project-argument"}, "action": "test --all", "outcome": {"status": "failure", "evidence": "Authored fixture: the tool rejected this invocation because the project argument was absent."}}, "correction": {"after_decision_id": "repair-1", "content": "This runner requires test --project demo-app.", "intended_action": "test --project demo-app", "visible_to_later": true}, "later": {"decision_id": "repair-2", "context": {"workflow": "build-repair", "environment": "demo", "task_family": "test-command", "condition": "runner-requires-project-argument"}, "action": "test --all", "outcome": {"status": "failure", "evidence": "Authored fixture: the same invocation was rejected again."}}, "guard": {"allowed_actions": ["test --project demo-app"], "basis": "Authored teaching precondition: only the project-scoped invocation is allowed in this toy runner."}, "comparison": {"comparable": true, "basis": "Authored synthetic comparison: these toy attempts declare the same task conditions. This is not independent evidence."}}, {"schema_version": 1, "id": "missing-history", "title": "A correction was not available on the later attempt", "provenance": "synthetic", "initial": {"decision_id": "export-1", "context": {"workflow": "billing-export", "environment": "demo", "task_family": "month-close", "condition": "must-read-current-data"}, "action": "read-replica", "outcome": {"status": "failure", "evidence": "Authored fixture: export used a snapshot older than the requested reporting period."}}, "correction": {"after_decision_id": "export-1", "content": "For this month-close export, use the primary data source.", "intended_action": "read-primary", "visible_to_later": false}, "later": {"decision_id": "export-2", "context": {"workflow": "billing-export", "environment": "demo", "task_family": "month-close", "condition": "must-read-current-data"}, "action": "read-replica", "outcome": {"status": "failure", "evidence": "Authored fixture: the later export used the same old snapshot."}}, "guard": {"allowed_actions": ["read-primary"], "basis": "Authored teaching precondition: this export requires the primary source for current data."}, "comparison": {"comparable": true, "basis": "Authored synthetic comparison: these toy attempts declare the same task conditions. This is not independent evidence."}}, {"schema_version": 1, "id": "missing-outcome", "title": "A later action has no observed result yet", "provenance": "synthetic", "initial": {"decision_id": "job-1", "context": {"workflow": "build-repair", "environment": "demo", "task_family": "test-command", "condition": "runner-requires-project-argument"}, "action": "test --all", "outcome": {"status": "failure", "evidence": "Authored fixture: tool rejected missing project argument."}}, "correction": {"after_decision_id": "job-1", "content": "Supply the project argument.", "intended_action": "test --project demo-app", "visible_to_later": null}, "later": {"decision_id": "job-2", "context": {"workflow": "build-repair", "environment": "demo", "task_family": "test-command", "condition": "runner-requires-project-argument"}, "action": "test --all", "outcome": {"status": "unknown", "evidence": "No result is recorded in this authored fixture."}}, "comparison": {"comparable": true, "basis": "Authored synthetic comparison: these toy attempts declare the same task conditions. This is not independent evidence."}}]};
+/* All supplied text is data. No fetch, model calls, telemetry or browser storage. */
+(function () {
+'use strict';
+const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const obj=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+const fail=s=>{throw new Error(s);};
+function text(x,where){
+  if(typeof x!=='string'||!(/[^\s\u0085\u001c-\u001f]/u.test(x))||Array.from(x).length>12000)fail(where+' must be a nonempty string of at most 12000 characters');
+  for(let i=0;i<x.length;i++){
+    const n=x.charCodeAt(i);
+    if(n<32&&![9,10,13].includes(n))fail(where+' contains a control character');
+    if(n>=0xD800&&n<=0xDBFF){const m=x.charCodeAt(++i);if(!(m>=0xDC00&&m<=0xDFFF))fail(where+' contains invalid Unicode');}
+    else if(n>=0xDC00&&n<=0xDFFF)fail(where+' contains invalid Unicode');
   }
-}</pre></details>
-</article>
-<article id="case-1"><span class="tag">synthetic case / correction_available</span>
-<h2>The correction was supplied, but the same action repeated</h2><p>The same failed action repeated despite declared correction visibility.</p>
-<table><thead><tr><th>Recorded trace</th><th>Initial attempt</th><th>Later attempt</th></tr></thead><tbody><tr><th>Decision</th><td>repair-1</td><td>repair-2</td></tr><tr><th>Action</th><td>test --all</td><td>test --all</td></tr><tr><th>Outcome</th><td>failure</td><td>failure</td></tr><tr><th>Evidence</th><td>Authored fixture: the tool rejected this invocation because the project argument was absent.</td><td>Authored fixture: the same invocation was rejected again.</td></tr></tbody></table>
-<p><strong>Correction:</strong> This runner requires test --project demo-app.</p>
-<p><strong>Next check:</strong> Inspect adherence and execution constraints. Better retrieval alone may not solve this.</p>
-<div class="grid"><div class="control"><h3>Written correction control</h3>
-<p>Intended action: <code>test --project demo-app</code></p>
-<p>The intended action is read from the authored correction. No model was tested for following it, and no counterfactual outcome was measured.</p></div>
-<div class="control"><h3>Deterministic check control</h3><p>The declared guard rejects the observed later action.</p><p>Authored teaching precondition: only the project-scoped invocation is allowed in this toy runner.</p><p>This checks a declared allowlist. It does not execute an agent, choose a repair, or prove task success.</p></div></div>
-<details><summary>Inspect the complete input</summary><pre>{
-  &quot;schema_version&quot;: 1,
-  &quot;id&quot;: &quot;ignored-correction&quot;,
-  &quot;title&quot;: &quot;The correction was supplied, but the same action repeated&quot;,
-  &quot;provenance&quot;: &quot;synthetic&quot;,
-  &quot;initial&quot;: {
-    &quot;decision_id&quot;: &quot;repair-1&quot;,
-    &quot;context&quot;: {
-      &quot;workflow&quot;: &quot;build-repair&quot;,
-      &quot;environment&quot;: &quot;demo&quot;,
-      &quot;task_family&quot;: &quot;test-command&quot;,
-      &quot;condition&quot;: &quot;runner-requires-project-argument&quot;
-    },
-    &quot;action&quot;: &quot;test --all&quot;,
-    &quot;outcome&quot;: {
-      &quot;status&quot;: &quot;failure&quot;,
-      &quot;evidence&quot;: &quot;Authored fixture: the tool rejected this invocation because the project argument was absent.&quot;
-    }
-  },
-  &quot;correction&quot;: {
-    &quot;after_decision_id&quot;: &quot;repair-1&quot;,
-    &quot;content&quot;: &quot;This runner requires test --project demo-app.&quot;,
-    &quot;intended_action&quot;: &quot;test --project demo-app&quot;,
-    &quot;visible_to_later&quot;: true
-  },
-  &quot;later&quot;: {
-    &quot;decision_id&quot;: &quot;repair-2&quot;,
-    &quot;context&quot;: {
-      &quot;workflow&quot;: &quot;build-repair&quot;,
-      &quot;environment&quot;: &quot;demo&quot;,
-      &quot;task_family&quot;: &quot;test-command&quot;,
-      &quot;condition&quot;: &quot;runner-requires-project-argument&quot;
-    },
-    &quot;action&quot;: &quot;test --all&quot;,
-    &quot;outcome&quot;: {
-      &quot;status&quot;: &quot;failure&quot;,
-      &quot;evidence&quot;: &quot;Authored fixture: the same invocation was rejected again.&quot;
-    }
-  },
-  &quot;guard&quot;: {
-    &quot;allowed_actions&quot;: [
-      &quot;test --project demo-app&quot;
-    ],
-    &quot;basis&quot;: &quot;Authored teaching precondition: only the project-scoped invocation is allowed in this toy runner.&quot;
+}
+function fields(x,required,optional,where){
+  if(!obj(x))fail(where+' must be an object');
+  if(required.some(k=>!own(x,k))||Object.keys(x).some(k=>!required.includes(k)&&!optional.includes(k)))fail(where+' has missing or unexpected fields');
+}
+function bool(x,where){if(x!==null&&typeof x!=='boolean')fail(where+' must be true, false, or null');}
+function validate(c){
+  if(!obj(c)||c.schema_version!==1)fail('Expected a case object with schema_version 1');
+  fields(c,['schema_version','id','title','provenance','initial','later','correction'],['comparison','guard'],'case');
+  ['id','title'].forEach(k=>text(c[k],k));
+  if(!['synthetic','user_supplied'].includes(c.provenance))fail('provenance must be synthetic or user_supplied');
+  ['initial','later'].forEach(k=>{
+    const a=c[k];fields(a,['decision_id','action','context','outcome'],[],k);
+    ['decision_id','action'].forEach(v=>text(a[v],k+'.'+v));
+    if(!obj(a.context)||Object.keys(a.context).length<1||Object.keys(a.context).length>30)fail(k+'.context must contain 1 to 30 named string fields');
+    Object.keys(a.context).forEach(v=>{text(v,k+'.context key');text(a.context[v],k+'.context.'+v);});
+    fields(a.outcome,['status','evidence'],[],k+'.outcome');
+    if(!['failure','success','unknown'].includes(a.outcome.status))fail(k+'.outcome.status must be failure, success, or unknown');
+    text(a.outcome.evidence,k+'.outcome.evidence');
+  });
+  if(c.initial.decision_id===c.later.decision_id)fail('The initial and later decisions must have distinct IDs');
+  fields(c.correction,['after_decision_id','content','intended_action','visible_to_later'],[],'correction');
+  if(c.correction.after_decision_id!==c.initial.decision_id)fail('Correction must refer to the initial decision ID');
+  ['content','intended_action'].forEach(k=>text(c.correction[k],'correction.'+k));bool(c.correction.visible_to_later,'correction.visible_to_later');
+  if(c.comparison!==undefined&&c.comparison!==null){fields(c.comparison,['comparable','basis'],[],'comparison');bool(c.comparison.comparable,'comparison.comparable');text(c.comparison.basis,'comparison.basis');}
+  if(c.guard!==undefined&&c.guard!==null){
+    fields(c.guard,['allowed_actions','basis'],[],'guard');
+    const a=c.guard.allowed_actions;
+    if(!Array.isArray(a)||a.length<1||a.length>20)fail('guard.allowed_actions must have 1 to 20 explicit actions');
+    a.forEach(x=>text(x,'guard.allowed_actions entry'));
+    if(new Set(a).size!==a.length)fail('guard.allowed_actions contains duplicate entries');text(c.guard.basis,'guard.basis');
   }
-}</pre></details>
-</article>
-<article id="case-2"><span class="tag">synthetic case / context_changed</span>
-<h2>The same action occurred in a different context</h2><p>These attempts are not comparable under the declared context.</p>
-<table><thead><tr><th>Recorded trace</th><th>Initial attempt</th><th>Later attempt</th></tr></thead><tbody><tr><th>Decision</th><td>query-1</td><td>query-2</td></tr><tr><th>Action</th><td>read-replica</td><td>read-replica</td></tr><tr><th>Outcome</th><td>failure</td><td>success</td></tr><tr><th>Evidence</th><td>Authored fixture: close report required current data.</td><td>Authored fixture: this historical analysis explicitly required the frozen snapshot.</td></tr></tbody></table>
-<p><strong>Correction:</strong> For month-close exports, use the primary source.</p>
-<p><strong>Next check:</strong> Review whether the old correction applies. Repeating an action in a different task can be appropriate.</p>
-<div class="grid"><div class="control"><h3>Written correction control</h3>
-<p>Intended action: <code>read-primary</code></p>
-<p>The intended action is read from the authored correction. No model was tested for following it, and no counterfactual outcome was measured.</p></div>
-<div class="control"><h3>Deterministic check control</h3><p>The declared guard allows the observed later action.</p><p>Authored teaching precondition for the later task: historical analysis uses a frozen snapshot.</p><p>This checks a declared allowlist. It does not execute an agent, choose a repair, or prove task success.</p></div></div>
-<details><summary>Inspect the complete input</summary><pre>{
-  &quot;schema_version&quot;: 1,
-  &quot;id&quot;: &quot;changed-context&quot;,
-  &quot;title&quot;: &quot;The same action occurred in a different context&quot;,
-  &quot;provenance&quot;: &quot;synthetic&quot;,
-  &quot;initial&quot;: {
-    &quot;decision_id&quot;: &quot;query-1&quot;,
-    &quot;context&quot;: {
-      &quot;workflow&quot;: &quot;billing-export&quot;,
-      &quot;environment&quot;: &quot;demo&quot;,
-      &quot;task_family&quot;: &quot;month-close&quot;,
-      &quot;condition&quot;: &quot;must-read-current-data&quot;
-    },
-    &quot;action&quot;: &quot;read-replica&quot;,
-    &quot;outcome&quot;: {
-      &quot;status&quot;: &quot;failure&quot;,
-      &quot;evidence&quot;: &quot;Authored fixture: close report required current data.&quot;
+  return c;
+}
+function parseCase(raw){
+  if(new TextEncoder().encode(raw).length>100000)fail('Input exceeds the 100 KB local case limit');
+  // Small bounded JSON parser preserves duplicate-key and schema-version checks.
+  let i=0;const ws=()=>{while(/[ \r\n\t]/.test(raw[i]||'!'))i++;};
+  function string(){const start=i++;while(i<raw.length){if(raw[i]==='\\'){i+=2;continue;}if(raw[i++]==='"')return JSON.parse(raw.slice(start,i));}fail('Unterminated JSON string');}
+  function value(depth,path){
+    if(depth>64)fail('JSON nesting exceeds 64 levels');ws();const ch=raw[i];
+    if(ch==='"')return string();
+    if(ch==='{'){
+      i++;ws();const result=Object.create(null);if(raw[i]==='}'){i++;return result;}
+      while(true){ws();if(raw[i]!=='"')fail('Expected a JSON field name');const key=string();if(own(result,key))fail('Duplicate JSON field: '+key);ws();if(raw[i++]!==':')fail('Expected a colon');result[key]=value(depth+1,path?path+'.'+key:key);ws();if(raw[i]==='}'){i++;return result;}if(raw[i++]!==',')fail('Expected a comma');}
     }
-  },
-  &quot;correction&quot;: {
-    &quot;after_decision_id&quot;: &quot;query-1&quot;,
-    &quot;content&quot;: &quot;For month-close exports, use the primary source.&quot;,
-    &quot;intended_action&quot;: &quot;read-primary&quot;,
-    &quot;visible_to_later&quot;: true
-  },
-  &quot;later&quot;: {
-    &quot;decision_id&quot;: &quot;query-2&quot;,
-    &quot;context&quot;: {
-      &quot;workflow&quot;: &quot;billing-export&quot;,
-      &quot;environment&quot;: &quot;demo&quot;,
-      &quot;task_family&quot;: &quot;historical-analysis&quot;,
-      &quot;condition&quot;: &quot;frozen-snapshot-required&quot;
-    },
-    &quot;action&quot;: &quot;read-replica&quot;,
-    &quot;outcome&quot;: {
-      &quot;status&quot;: &quot;success&quot;,
-      &quot;evidence&quot;: &quot;Authored fixture: this historical analysis explicitly required the frozen snapshot.&quot;
-    }
-  },
-  &quot;guard&quot;: {
-    &quot;allowed_actions&quot;: [
-      &quot;read-replica&quot;
-    ],
-    &quot;basis&quot;: &quot;Authored teaching precondition for the later task: historical analysis uses a frozen snapshot.&quot;
+    if(ch==='['){i++;ws();const result=[];if(raw[i]===']'){i++;return result;}while(true){result.push(value(depth+1,path+'[]'));ws();if(raw[i]===']'){i++;return result;}if(raw[i++]!==',')fail('Expected a comma');}}
+    for(const [s,v] of [['true',true],['false',false],['null',null]])if(raw.slice(i,i+s.length)===s){i+=s.length;return v;}
+    const m=raw.slice(i).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+    if(m){i+=m[0].length;if(path==='schema_version'&&m[0]!=='1')fail('schema_version must be integer literal 1');const n=Number(m[0]);if(!Number.isFinite(n))fail('Invalid JSON number');return n;}
+    fail('Invalid JSON value');
   }
-}</pre></details>
-</article>
-<article id="case-3"><span class="tag">synthetic case / insufficient_outcome_evidence</span>
-<h2>A later action has no observed result yet</h2><p>The recorded outcomes do not establish a repeated failure.</p>
-<table><thead><tr><th>Recorded trace</th><th>Initial attempt</th><th>Later attempt</th></tr></thead><tbody><tr><th>Decision</th><td>job-1</td><td>job-2</td></tr><tr><th>Action</th><td>test --all</td><td>test --all</td></tr><tr><th>Outcome</th><td>failure</td><td>unknown</td></tr><tr><th>Evidence</th><td>Authored fixture: tool rejected missing project argument.</td><td>No result is recorded in this authored fixture.</td></tr></tbody></table>
-<p><strong>Correction:</strong> Supply the project argument.</p>
-<p><strong>Next check:</strong> Collect the missing independently observed result. Missing feedback is not failure.</p>
-<div class="grid"><div class="control"><h3>Written correction control</h3>
-<p>Intended action: <code>test --project demo-app</code></p>
-<p>The intended action is read from the authored correction. No model was tested for following it, and no counterfactual outcome was measured.</p></div>
-<div class="control"><h3>Deterministic check control</h3><p>No guard was supplied.</p><p>No explicit precondition was supplied. No guard result is inferred.</p></div></div>
-<details><summary>Inspect the complete input</summary><pre>{
-  &quot;schema_version&quot;: 1,
-  &quot;id&quot;: &quot;missing-outcome&quot;,
-  &quot;title&quot;: &quot;A later action has no observed result yet&quot;,
-  &quot;provenance&quot;: &quot;synthetic&quot;,
-  &quot;initial&quot;: {
-    &quot;decision_id&quot;: &quot;job-1&quot;,
-    &quot;context&quot;: {
-      &quot;workflow&quot;: &quot;build-repair&quot;,
-      &quot;environment&quot;: &quot;demo&quot;,
-      &quot;task_family&quot;: &quot;test-command&quot;,
-      &quot;condition&quot;: &quot;runner-requires-project-argument&quot;
-    },
-    &quot;action&quot;: &quot;test --all&quot;,
-    &quot;outcome&quot;: {
-      &quot;status&quot;: &quot;failure&quot;,
-      &quot;evidence&quot;: &quot;Authored fixture: tool rejected missing project argument.&quot;
-    }
-  },
-  &quot;correction&quot;: {
-    &quot;after_decision_id&quot;: &quot;job-1&quot;,
-    &quot;content&quot;: &quot;Supply the project argument.&quot;,
-    &quot;intended_action&quot;: &quot;test --project demo-app&quot;,
-    &quot;visible_to_later&quot;: null
-  },
-  &quot;later&quot;: {
-    &quot;decision_id&quot;: &quot;job-2&quot;,
-    &quot;context&quot;: {
-      &quot;workflow&quot;: &quot;build-repair&quot;,
-      &quot;environment&quot;: &quot;demo&quot;,
-      &quot;task_family&quot;: &quot;test-command&quot;,
-      &quot;condition&quot;: &quot;runner-requires-project-argument&quot;
-    },
-    &quot;action&quot;: &quot;test --all&quot;,
-    &quot;outcome&quot;: {
-      &quot;status&quot;: &quot;unknown&quot;,
-      &quot;evidence&quot;: &quot;No result is recorded in this authored fixture.&quot;
-    }
-  }
-}</pre></details>
-</article>
-<footer>This hosted preview contains synthetic data. The downloadable tool runs locally without sign-up, API keys, model calls or uploading a trace.
-For a real investigation, replace the fixture with an authorized redacted trace and preserve what is known, unknown, and independently observed.
-Hebbrix is in private beta. Applications record a decision and attach its later result; Hebbrix uses those results to guide later decisions.</footer>
-</main></body></html>
+  const c=value(0,'');ws();if(i!==raw.length)fail('Unexpected content after JSON value');return validate(c);
+}
+function codepointCompare(x,y){
+  const a=Array.from(x,c=>c.codePointAt(0)),b=Array.from(y,c=>c.codePointAt(0));
+  for(let i=0;i<Math.min(a.length,b.length);i++)if(a[i]!==b[i])return a[i]-b[i];
+  return a.length-b.length;
+}
+function analyze(c,rules){
+  validate(c);const a=c.initial,b=c.later,k=c.correction;
+  const differences=Array.from(new Set([...Object.keys(a.context),...Object.keys(b.context)])).filter(x=>a.context[x]!==b.context[x]).sort(codepointCompare);
+  const same=a.action===b.action,firstFailure=a.outcome.status==='failure',laterFailure=b.outcome.status==='failure';
+  const comparable=c.comparison?.comparable??null,visible=k.visible_to_later;
+  const facts={context_changed:!!differences.length,not_comparable:comparable===false,missing_outcome:a.outcome.status==='unknown'||b.outcome.status==='unknown',initial_not_failure:!firstFailure,different_action:!same,later_not_failure:!laterFailure,comparability_unknown:comparable!==true,same_intended_action:k.intended_action===a.action,correction_unavailable:visible===false,correction_available:visible===true,always:true};
+  const rule=rules.find(r=>facts[r.when]);
+  const guard={available:c.guard!==undefined&&c.guard!==null};
+  if(guard.available)Object.assign(guard,{later_action_allowed:c.guard.allowed_actions.includes(b.action),correction_action_allowed:c.guard.allowed_actions.includes(k.intended_action),allowed_actions:c.guard.allowed_actions,basis:c.guard.basis,limit:'This checks a declared allowlist. It does not execute an agent, choose a repair, or prove task success.'});
+  else guard.limit='No allowlist was supplied. No rule result is inferred.';
+  return {id:c.id,title:c.title,provenance:c.provenance,diagnosis:rule.code,conclusion:rule.conclusion,next_check:rule.next_check,scope_differences:differences,same_action:same,declared_comparable_repeat_failure:!differences.length&&comparable===true&&firstFailure&&laterFailure&&same,reported_failure_pattern:firstFailure&&laterFailure&&same,comparison_declared:comparable,evidence_limit:'All fields are supplied declarations. This tool cannot verify their truth, causal explanation, action equivalence or outcome quality.',recorded_correction:{intended_action:k.intended_action,visible_in_recorded_later_attempt:visible,limit:'The intended action is read from the authored correction. No model was tested for following it, and no counterfactual outcome was measured.'},declared_allowlist_check:guard,claim_boundary:'This inspects a supplied record. It does not run an agent, test Hebbrix, establish causality, or compare model or product performance.',case:c};
+}
+if(typeof module!=='undefined')module.exports={parseCase,validate,analyze};
+if(typeof document==='undefined')return;
+const editor=document.getElementById('input'),error=document.getElementById('error'),result=document.getElementById('result');
+let report=null,generation=0;
+function clearResult(){report=null;result.replaceChildren();error.textContent='';document.getElementById('download').disabled=true;}
+function clear(){generation++;editor.value='';document.getElementById('file').value='';document.getElementById('examples').selectedIndex=0;clearResult();}
+const declaration=x=>x===null?'unknown':(x?'yes':'no');
+function show(){clearResult();try{
+  report=analyze(parseCase(editor.value),window.REPLAY_DATA.rules);
+  function append(tag,s,parent=result){const n=document.createElement(tag);n.textContent=s;parent.append(n);return n;}
+  append('span',report.provenance+' / supplied record').className='tag';
+  append('h2',report.conclusion);
+  const table=append('table',''),head=append('thead','',table),hr=append('tr','',head);
+  ['Supplied field','Initial attempt','Later attempt'].forEach(x=>append('th',x,hr));
+  const body=append('tbody','',table);
+  const c=report.case;
+  [['Action',c.initial.action,c.later.action],['Outcome label',c.initial.outcome.status,c.later.outcome.status],['Result description',c.initial.outcome.evidence,c.later.outcome.evidence]].forEach(row=>{const tr=append('tr','',body);row.forEach((x,i)=>append(i===0?'th':'td',x,tr));});
+  append('p','Correction text: '+c.correction.content);
+  append('p','Intended action: '+c.correction.intended_action);
+  if(c.comparison)append('p','Comparison basis: '+c.comparison.basis);
+  append('p','Next check: '+report.next_check);
+  append('p','Exact action strings match: '+report.same_action+'. Reported same-action failure pattern: '+report.reported_failure_pattern+'.');
+  append('p','Changed context fields: '+(report.scope_differences.join(', ')||'none')+'. Declared comparable: '+declaration(report.comparison_declared)+'.');
+  append('p','Declared correction visibility: '+declaration(report.recorded_correction.visible_in_recorded_later_attempt)+'.');
+  if(report.declared_allowlist_check.available){append('p','Declared allowlist accepts the later action: '+report.declared_allowlist_check.later_action_allowed+'. Accepts the correction action: '+report.declared_allowlist_check.correction_action_allowed+'.');append('p',report.declared_allowlist_check.basis);}
+  append('p',report.evidence_limit);append('p',report.claim_boundary);
+  const detail=append('details','');append('summary','Inspect the complete report',detail);append('pre',JSON.stringify(report,null,2),detail);
+  document.getElementById('download').disabled=false;
+}catch(e){report=null;error.textContent='Cannot inspect record: '+e.message;}}
+document.getElementById('analyze').addEventListener('click',show);
+editor.addEventListener('input',()=>{generation++;clearResult();});
+document.getElementById('clear').addEventListener('click',clear);
+const examples=document.getElementById('examples');
+window.REPLAY_DATA.cases.forEach((c,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=c.title;examples.append(o);});
+examples.addEventListener('change',()=>{generation++;clearResult();if(examples.value==='')return;editor.value=JSON.stringify(window.REPLAY_DATA.cases[Number(examples.value)],null,2);show();});
+document.getElementById('file').addEventListener('change',async event=>{const ticket=++generation;clearResult();const file=event.target.files[0];if(!file)return;if(file.size>100000){error.textContent='File exceeds the 100 KB local case limit';return;}try{const bytes=await file.arrayBuffer();const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);if(ticket!==generation)return;editor.value=raw;show();}catch(e){if(ticket===generation)error.textContent='Cannot read UTF-8 file: '+e.message;}});
+document.getElementById('download').addEventListener('click',()=>{if(!report)return;const blob=new Blob([JSON.stringify(report,null,2)+'\n'],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='record-inspection.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+})();
+</script></body></html>

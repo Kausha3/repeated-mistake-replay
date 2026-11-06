@@ -13,35 +13,35 @@ class ReplayEvidenceTests(unittest.TestCase):
         supplied = replay.diagnose(self.case("ignored-correction"))
         self.assertEqual(missing["diagnosis"], "correction_unavailable")
         self.assertEqual(supplied["diagnosis"], "correction_available")
-        self.assertTrue(missing["observed_repeat_failure"])
-        self.assertTrue(supplied["observed_repeat_failure"])
+        self.assertTrue(missing["declared_comparable_repeat_failure"])
+        self.assertTrue(supplied["declared_comparable_repeat_failure"])
 
     def test_changed_context_does_not_become_a_repeated_failure(self):
         report = replay.diagnose(self.case("changed-context"))
         self.assertEqual(report["diagnosis"], "context_changed")
-        self.assertFalse(report["observed_repeat_failure"])
+        self.assertFalse(report["declared_comparable_repeat_failure"])
         self.assertEqual(set(report["scope_differences"]), {"condition", "task_family"})
-        self.assertTrue(report["deterministic_check_control"]["observed_action_allowed"])
+        self.assertTrue(report["declared_allowlist_check"]["later_action_allowed"])
 
     def test_missing_feedback_is_not_failure(self):
         report = replay.diagnose(self.case("missing-outcome"))
         self.assertEqual(report["diagnosis"], "insufficient_outcome_evidence")
-        self.assertFalse(report["observed_repeat_failure"])
-        self.assertFalse(report["deterministic_check_control"]["available"])
+        self.assertFalse(report["declared_comparable_repeat_failure"])
+        self.assertFalse(report["declared_allowlist_check"]["available"])
 
     def test_recovered_action_is_not_reported_as_repeated_failure(self):
         case = self.case("missing-history")
         case["later"]["outcome"] = {"status":"success", "evidence":"The supplied record says the later run succeeded."}
         report = replay.diagnose(case)
         self.assertEqual(report["diagnosis"], "repeat_without_repeat_failure")
-        self.assertFalse(report["observed_repeat_failure"])
+        self.assertFalse(report["declared_comparable_repeat_failure"])
 
     def test_different_action_is_not_an_exact_repeat(self):
         case = self.case("missing-history")
         case["later"]["action"] = "another-action"
         report = replay.diagnose(case)
         self.assertEqual(report["diagnosis"], "different_action")
-        self.assertFalse(report["observed_repeat_failure"])
+        self.assertFalse(report["declared_comparable_repeat_failure"])
 
     def test_correction_must_link_to_original_attempt(self):
         case = self.case("missing-history")
@@ -55,7 +55,7 @@ class ReplayEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(replay.CaseError, "true, false, or null"):
             replay.validate_case(case)
         del case["correction"]["visible_to_later"]
-        with self.assertRaisesRegex(replay.CaseError, "explicitly"):
+        with self.assertRaisesRegex(replay.CaseError, "missing fields"):
             replay.validate_case(case)
 
     def test_html_escapes_trace_content(self):
@@ -73,8 +73,8 @@ class ReplayEvidenceTests(unittest.TestCase):
         case["provenance"] = "user_supplied"
         del case["guard"]
         report = replay.diagnose(case)
-        self.assertFalse(report["deterministic_check_control"]["available"])
-        self.assertNotIn("observed_action_allowed", report["deterministic_check_control"])
+        self.assertFalse(report["declared_allowlist_check"]["available"])
+        self.assertNotIn("later_action_allowed", report["declared_allowlist_check"])
 
     def test_cli_writes_only_local_inspection_results(self):
         with tempfile.TemporaryDirectory() as folder:

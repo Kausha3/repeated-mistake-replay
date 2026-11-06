@@ -42,5 +42,9 @@
       "test --project demo-app"
     ],
     "basis": "Authored teaching precondition: only the project-scoped invocation is allowed in this toy runner."
+  },
+  "comparison": {
+    "comparable": true,
+    "basis": "Authored synthetic comparison: these toy attempts declare the same task conditions. This is not independent evidence."
   }
 }

@@ -42,5 +42,9 @@
       "read-replica"
     ],
     "basis": "Authored teaching precondition for the later task: historical analysis uses a frozen snapshot."
+  },
+  "comparison": {
+    "comparable": false,
+    "basis": "Authored synthetic comparison: task purpose and condition differ."
   }
 }
