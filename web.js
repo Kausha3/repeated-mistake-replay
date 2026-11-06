@@ -47,7 +47,9 @@ function validate(c){
   return c;
 }
 function parseCase(raw){
+  if(typeof raw!=='string')fail('Input must be JSON text');
   if(new TextEncoder().encode(raw).length>100000)fail('Input exceeds the 100 KB local case limit');
+  if(raw.startsWith('\uFEFF'))raw=raw.slice(1);
   // Small bounded JSON parser preserves duplicate-key and schema-version checks.
   let i=0;const ws=()=>{while(/[ \r\n\t]/.test(raw[i]||'!'))i++;};
   function string(){const start=i++;while(i<raw.length){if(raw[i]==='\\'){i+=2;continue;}if(raw[i++]==='"')return JSON.parse(raw.slice(start,i));}fail('Unterminated JSON string');}
@@ -86,11 +88,13 @@ function analyze(c,rules){
 if(typeof module!=='undefined')module.exports={parseCase,validate,analyze};
 if(typeof document==='undefined')return;
 const editor=document.getElementById('input'),error=document.getElementById('error'),result=document.getElementById('result');
-let report=null,generation=0;
+const analyzeButton=document.getElementById('analyze'),fileInput=document.getElementById('file');
+let report=null,generation=0,loading=false;
+function stopLoading(){loading=false;analyzeButton.disabled=false;}
 function clearResult(){report=null;result.replaceChildren();error.textContent='';document.getElementById('download').disabled=true;}
-function clear(){generation++;editor.value='';document.getElementById('file').value='';document.getElementById('examples').selectedIndex=0;clearResult();}
+function clear(){generation++;stopLoading();editor.value='';fileInput.value='';document.getElementById('examples').selectedIndex=0;clearResult();}
 const declaration=x=>x===null?'unknown':(x?'yes':'no');
-function show(){clearResult();try{
+function show(){if(loading){error.textContent='Wait for the selected file to finish loading.';return;}clearResult();try{
   report=analyze(parseCase(editor.value),window.REPLAY_DATA.rules);
   function append(tag,s,parent=result){const n=document.createElement(tag);n.textContent=s;parent.append(n);return n;}
   append('span',report.provenance+' / supplied record').className='tag';
@@ -112,12 +116,31 @@ function show(){clearResult();try{
   const detail=append('details','');append('summary','Inspect the complete report',detail);append('pre',JSON.stringify(report,null,2),detail);
   document.getElementById('download').disabled=false;
 }catch(e){report=null;error.textContent='Cannot inspect record: '+e.message;}}
-document.getElementById('analyze').addEventListener('click',show);
-editor.addEventListener('input',()=>{generation++;clearResult();});
+analyzeButton.addEventListener('click',show);
+editor.addEventListener('input',()=>{generation++;stopLoading();fileInput.value='';document.getElementById('examples').selectedIndex=0;clearResult();});
 document.getElementById('clear').addEventListener('click',clear);
 const examples=document.getElementById('examples');
 window.REPLAY_DATA.cases.forEach((c,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=c.title;examples.append(o);});
-examples.addEventListener('change',()=>{generation++;clearResult();if(examples.value==='')return;editor.value=JSON.stringify(window.REPLAY_DATA.cases[Number(examples.value)],null,2);show();});
-document.getElementById('file').addEventListener('change',async event=>{const ticket=++generation;clearResult();const file=event.target.files[0];if(!file)return;if(file.size>100000){error.textContent='File exceeds the 100 KB local case limit';return;}try{const bytes=await file.arrayBuffer();const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);if(ticket!==generation)return;editor.value=raw;show();}catch(e){if(ticket===generation)error.textContent='Cannot read UTF-8 file: '+e.message;}});
-document.getElementById('download').addEventListener('click',()=>{if(!report)return;const blob=new Blob([JSON.stringify(report,null,2)+'\n'],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='record-inspection.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+examples.addEventListener('change',()=>{generation++;stopLoading();fileInput.value='';clearResult();if(examples.value==='')return;editor.value=JSON.stringify(window.REPLAY_DATA.cases[Number(examples.value)],null,2);show();});
+fileInput.addEventListener('change',async event=>{
+  const ticket=++generation;stopLoading();clearResult();editor.value='';examples.selectedIndex=0;
+  const file=event.target.files[0];if(!file)return;
+  if(file.size>100000){fileInput.value='';error.textContent='File exceeds the 100 KB local case limit';return;}
+  loading=true;analyzeButton.disabled=true;
+  try{
+    const bytes=await file.arrayBuffer();if(ticket!==generation)return;
+    const raw=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);
+    if(ticket!==generation)return;editor.value=raw;stopLoading();show();
+  }catch(e){
+    if(ticket===generation){editor.value='';fileInput.value='';error.textContent='Cannot read UTF-8 file: '+e.message;}
+  }finally{if(ticket===generation)stopLoading();}
+});
+document.getElementById('download').addEventListener('click',()=>{
+  if(!report)return;let url=null;error.textContent='';
+  try{
+    const blob=new Blob([JSON.stringify(report,null,2)+'\n'],{type:'application/json'});
+    url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='record-inspection.json';a.click();
+  }catch(e){error.textContent='Cannot download report: '+e.message;}
+  finally{if(url!==null)setTimeout(()=>URL.revokeObjectURL(url),1000);}
+});
 })();

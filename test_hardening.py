@@ -1,5 +1,8 @@
 import copy
 import json
+import os
+import stat
+import sys
 from pathlib import Path
 import subprocess
 import tempfile
@@ -99,11 +102,76 @@ class HardeningTests(unittest.TestCase):
             with mock.patch.object(replay.os,'replace',side_effect=fail_second),self.assertRaises(OSError):replay.write_bundle(p,{name:'new '+value for name,value in old.items()})
             self.assertEqual({name:(p/name).read_text() for name in old},old)
 
+    def test_pathological_integer_is_a_controlled_parser_error(self):
+        raw='{"schema_version":'+('9'*5000)+'}'
+        with self.assertRaises(replay.CaseError):replay.parse_case(raw)
+        with tempfile.TemporaryDirectory() as folder:
+            source=Path(folder)/'large-number.json';source.write_text(raw)
+            done=subprocess.run([sys.executable,str(ROOT/'replay.py'),'--input',str(source),'--output',str(Path(folder)/'out')],capture_output=True,text=True,timeout=3)
+            self.assertEqual(done.returncode,2);self.assertNotIn('Traceback',done.stderr)
+
+    @unittest.skipUnless(hasattr(os,'mkfifo'),'Named pipes are POSIX-specific')
+    def test_fifo_input_rejects_without_waiting_for_writer(self):
+        with tempfile.TemporaryDirectory() as folder:
+            pipe=Path(folder)/'case.json';os.mkfifo(pipe);alias=Path(folder)/'alias.json';alias.symlink_to(pipe)
+            for source in [pipe,alias]:
+                done=subprocess.run([sys.executable,str(ROOT/'replay.py'),'--input',str(source),'--output',str(Path(folder)/'out')],capture_output=True,text=True,timeout=3)
+                self.assertEqual(done.returncode,2);self.assertIn('regular local JSON file',done.stderr)
+                self.assertNotIn('Traceback',done.stderr)
+
+    def test_selected_bundled_case_cannot_be_overwritten(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder);cases=base/'cases';cases.mkdir();source=cases/'report.json';original=json.dumps(self.case());source.write_text(original)
+            with mock.patch.object(replay,'ROOT',base):
+                self.assertEqual(replay.main(['--case','all','--output',str(cases)]),2)
+            self.assertEqual(source.read_text(),original)
+
+    @unittest.skipUnless(os.name=='posix','POSIX file-mode test')
+    def test_success_and_rollback_preserve_private_report_modes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder);old={name:'private '+name for name in ['report.json','report.md','report.html']}
+            for name,value in old.items():(base/name).write_text(value);os.chmod(base/name,0o600)
+            replay.write_bundle(base,{name:'new '+value for name,value in old.items()})
+            self.assertEqual([stat.S_IMODE((base/name).stat().st_mode) for name in old],[0o600]*3)
+            before={name:(base/name).read_bytes() for name in old};real_replace=replay.os.replace;count=0
+            def fail_second(source,target):
+                nonlocal count
+                count+=1
+                if count==2:raise OSError('Synthetic replacement failure')
+                return real_replace(source,target)
+            with mock.patch.object(replay.os,'replace',side_effect=fail_second),self.assertRaises(OSError):replay.write_bundle(base,{name:'later '+value for name,value in old.items()})
+            self.assertEqual({name:(base/name).read_bytes() for name in old},before)
+            self.assertEqual([stat.S_IMODE((base/name).stat().st_mode) for name in old],[0o600]*3)
+            os.chmod(base/'report.json',0o400);replay.write_bundle(base,{name:'final' for name in old})
+            self.assertEqual(stat.S_IMODE((base/'report.json').stat().st_mode),0o400)
+
+    def test_ascii_console_does_not_turn_success_into_traceback(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base=Path(folder);source=base/'input.json';c=self.case();c['id']='case-界';source.write_text(json.dumps(c))
+            done=subprocess.run([sys.executable,str(ROOT/'replay.py'),'--input',str(source),'--output',str(base/'报告')],env=dict(os.environ,PYTHONIOENCODING='ascii:strict'),capture_output=True,text=True,timeout=3)
+            self.assertEqual(done.returncode,0);self.assertNotIn('Traceback',done.stderr)
+            self.assertTrue((base/'报告'/'report.json').is_file())
+
+    def test_one_utf8_bom_has_consistent_size_and_parse_rules(self):
+        raw=json.dumps(self.case());self.assertEqual(replay.parse_case('\ufeff'+raw),self.case());self.assertEqual(replay.parse_case(('\ufeff'+raw).encode()),self.case())
+        with self.assertRaises(replay.CaseError):replay.parse_case('\ufeff\ufeff'+raw)
+        if NODE:
+            inputs=['\ufeff'+raw,'\ufeff\ufeff'+raw]
+            program="const w=require('./web.js'),fs=require('fs');process.stdout.write(JSON.stringify(JSON.parse(fs.readFileSync(0,'utf8')).map(s=>{try{w.parseCase(s);return true}catch{return false}})));"
+            done=subprocess.run([NODE,'-e',program],input=json.dumps(inputs),capture_output=True,text=True,cwd=ROOT,check=True)
+            self.assertEqual(json.loads(done.stdout),[True,False])
+
     def test_site_is_reproducible_and_no_unreviewed_network_code(self):
         self.assertEqual((ROOT/'docs/index.html').read_text(),build_site.build())
         js=(ROOT/'web.js').read_text()
         for code in ['fetch(', 'XMLHttpRequest', 'localStorage', 'sessionStorage', '.innerHTML', 'eval(']:self.assertNotIn(code,js)
         self.assertIn("connect-src 'none'",__import__("html").unescape(build_site.build()))
+
+    @unittest.skipUnless(NODE, "Node.js is needed for browser-state checks")
+    def test_browser_file_state_and_download_recovery(self):
+        done=subprocess.run([NODE,str(ROOT/'test_web_state.cjs')],cwd=ROOT,text=True,capture_output=True,timeout=15)
+        self.assertEqual(done.returncode,0,done.stdout+'\n'+done.stderr)
+        self.assertIn('state checks passed (mock DOM limits apply)',done.stdout)
 
     @unittest.skipUnless(NODE, "Node.js is needed only for cross-runtime tests")
     def test_browser_and_python_share_outputs_over_branch_matrix(self):

@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import sys
 import tempfile
 
@@ -100,6 +101,8 @@ def unique_object(pairs):
     return result
 
 def parse_case(raw):
+    if not isinstance(raw, (str, bytes, bytearray)):
+        raise CaseError("Input must be UTF-8 bytes or JSON text")
     if isinstance(raw, str):
         try:
             raw = raw.encode("utf-8")
@@ -108,17 +111,39 @@ def parse_case(raw):
     if len(raw) > MAX_INPUT_BYTES:
         raise CaseError("Input exceeds the 100 KB local case limit")
     try:
-        if isinstance(raw, bytes):
+        if isinstance(raw, (bytes, bytearray)):
             raw = raw.decode("utf-8")
+        if raw.startswith("\ufeff"):
+            raw = raw[1:]
         parsed = json.loads(raw, object_pairs_hook=unique_object, parse_constant=lambda value: (_ for _ in ()).throw(CaseError(f"Invalid JSON constant: {value}")))
-    except (UnicodeError, json.JSONDecodeError, RecursionError) as error:
+    except CaseError:
+        raise
+    except (ValueError, RecursionError) as error:
         raise CaseError(f"Input is not valid UTF-8 JSON: {error}") from error
     return validate_case(parsed)
 
 def load_case(path):
-    with Path(path).open("rb") as source:
-        raw = source.read(MAX_INPUT_BYTES + 1)
+    path = Path(path)
+    if not stat.S_ISREG(path.stat().st_mode):
+        raise CaseError("Input must be a regular local JSON file")
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NONBLOCK", 0))
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise CaseError("Input must be a regular local JSON file")
+        with os.fdopen(descriptor, "rb") as source:
+            descriptor = None
+            raw = source.read(MAX_INPUT_BYTES + 1)
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
     return parse_case(raw)
+
+def console(message, stream=None):
+    """Keep non-ASCII record IDs, paths and errors safe on restricted terminals."""
+    stream = sys.stdout if stream is None else stream
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    printable = str(message).encode(encoding, errors="backslashreplace").decode(encoding)
+    print(printable, file=stream)
 
 RULES = [{'when': 'context_changed', 'code': 'context_changed', 'conclusion': 'The supplied context fields differ. Their relevance needs review.', 'next_check': "Decide whether these differences change the task or the correction's applicability. A text difference alone does not establish that."}, {'when': 'not_comparable', 'code': 'declared_not_comparable', 'conclusion': 'The record declares these attempts unsuitable for comparison.', 'next_check': 'Review the supplied comparison basis before drawing a recurrence conclusion.'}, {'when': 'missing_outcome', 'code': 'insufficient_outcome_evidence', 'conclusion': 'The recorded outcomes do not establish a repeated failure.', 'next_check': 'Record the missing result and its source. Missing feedback is not failure.'}, {'when': 'initial_not_failure', 'code': 'initial_success', 'conclusion': 'The initial attempt is reported as successful, so this is not a repeat of an initial failure.', 'next_check': 'Review the later result separately and verify that both outcome labels are justified.'}, {'when': 'different_action', 'code': 'different_action', 'conclusion': 'The later attempt has different action text.', 'next_check': 'Investigate its result separately. Different text does not prove a semantically different action.'}, {'when': 'later_not_failure', 'code': 'repeat_without_repeat_failure', 'conclusion': 'The action repeated, but the recorded failure did not.', 'next_check': 'Check whether the first failure was transient before banning the action.'}, {'when': 'comparability_unknown', 'code': 'comparability_unknown', 'conclusion': 'The same action and two failures are reported. Comparable task conditions have not been established.', 'next_check': 'Add an explicit comparison basis. Matching context strings cannot establish equivalent task conditions.'}, {'when': 'same_intended_action', 'code': 'correction_preserves_action', 'conclusion': 'Two failures are reported, but the correction names the same action that was repeated.', 'next_check': 'Inspect parameters or other required changes. An action label alone cannot show whether the correction was followed.'}, {'when': 'correction_unavailable', 'code': 'correction_unavailable', 'conclusion': 'The record reports the same action failing twice and declares the correction unavailable.', 'next_check': 'Inspect how the correction is scoped, retrieved, and included in the later decision.'}, {'when': 'correction_available', 'code': 'correction_available', 'conclusion': 'The record reports the same action failing twice and declares the correction visible.', 'next_check': 'Check the actual supplied context, interpretation and execution. Visibility does not prove the correction was understood or applicable.'}, {'when': 'always', 'code': 'visibility_unknown', 'conclusion': 'The record reports two failures of the same action, but correction visibility is unknown.', 'next_check': 'Capture the evidence actually supplied to the later decision.'}]
 
@@ -261,7 +286,7 @@ def main(argv=None):
         if args.output is None:
             args.output = ROOT / "output"
         if args.input:
-            cases = [load_case(args.input)]
+            input_paths = [args.input]
         else:
             selection = args.case or "all"
             paths = sorted((ROOT / "cases").glob("*.json"), key=lambda path: path.stem)
@@ -269,7 +294,8 @@ def main(argv=None):
                 paths = [path for path in paths if path.stem == selection]
             if not paths:
                 raise CaseError("Unknown bundled case. Choose all or a file stem under cases/.")
-            cases = [load_case(path) for path in paths]
+            input_paths = paths
+        cases = [load_case(path) for path in input_paths]
         reports = [diagnose(case) for case in cases]
         # Resolve every destination first. Never overwrite an input or follow an output symlink.
         destinations = [args.output / ("report." + suffix) for suffix in ("json", "md", "html")]
@@ -278,7 +304,7 @@ def main(argv=None):
                 raise CaseError("Output report paths must not be symbolic links")
             if destination.exists() and not destination.is_file():
                 raise CaseError("Every report destination must be a regular file or absent")
-            if args.input and (destination.resolve() == args.input.resolve() or (destination.exists() and destination.samefile(args.input))):
+            if any(destination.resolve() == path.resolve() or (destination.exists() and destination.samefile(path)) for path in input_paths):
                 raise CaseError("Output would overwrite the input case")
         args.output.mkdir(parents=True, exist_ok=True)
         payloads = {
@@ -287,13 +313,13 @@ def main(argv=None):
         }
         write_bundle(args.output, payloads)
         for report in reports:
-            print(f"{report['id']}: {report['diagnosis']}")
-            print("  " + report["next_check"])
-        print(f"Local HTML: {(args.output / 'report.html').resolve()}")
-        print("No model or Hebbrix API calls were made.")
+            console(f"{report['id']}: {report['diagnosis']}")
+            console("  " + report["next_check"])
+        console(f"Local HTML: {(args.output / 'report.html').resolve()}")
+        console("No model or Hebbrix API calls were made.")
         return 0
     except (CaseError, OSError) as error:
-        print(f"Cannot inspect case: {error}", file=sys.stderr)
+        console(f"Cannot inspect case: {error}", sys.stderr)
         return 2
 
 def write_bundle(output, payloads):
@@ -304,10 +330,18 @@ def write_bundle(output, payloads):
     preserve = False
     try:
         for name, data in encoded.items():
-            (stage / name).write_bytes(data)
             target = output / name
+            mode = 0o600
             if target.exists():
-                shutil.copyfile(target, stage / (name + ".backup"))
+                mode &= stat.S_IMODE(target.stat().st_mode)
+            descriptor = os.open(stage / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o600)
+            with os.fdopen(descriptor, "wb") as staged:
+                staged.write(data)
+            os.chmod(stage / name, mode)
+            if target.exists():
+                backup = stage / (name + ".backup")
+                shutil.copyfile(target, backup)
+                os.chmod(backup, stat.S_IMODE(target.stat().st_mode))
         try:
             for name in encoded:
                 os.replace(stage / name, output / name)
